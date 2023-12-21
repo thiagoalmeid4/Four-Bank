@@ -10,7 +10,6 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 
-import java.sql.SQLException;
 
 @Repository
 public class CustomerDaoImpl implements CustomerDao {
@@ -36,7 +35,7 @@ public class CustomerDaoImpl implements CustomerDao {
 
         try{
    //         jdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
-            jdbcCall.execute();
+            jdbcCall.execute(sqlParameterSource);
         }catch (Exception e){
  //           try {
 //                jdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
