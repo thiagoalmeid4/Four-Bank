@@ -13,6 +13,7 @@ import org.hibernate.validator.constraints.br.CPF;
 @NoArgsConstructor
 @Data
 public class CustomerDtoSaveRequest {
+
     private String name;
 
     @Email(message = "Formato de email inválido")
