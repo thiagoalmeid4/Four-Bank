@@ -1,4 +1,4 @@
-package br.com.fourbank.api.errs;
+package br.com.fourbank.api.err;
 
 import java.time.LocalDateTime;
 
@@ -15,5 +15,12 @@ public class ErrResponse {
     private int status;
     private String path;
     private LocalDateTime timestamp;
+
+    public ErrResponse(String message, int status){
+        this.message = message;
+        this.status = status;
+        this.path = "";
+        this.timestamp = LocalDateTime.now();
+    }
 
 }

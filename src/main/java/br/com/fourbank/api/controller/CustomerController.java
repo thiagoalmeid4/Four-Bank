@@ -1,6 +1,6 @@
 package br.com.fourbank.api.controller;
 
-import br.com.fourbank.api.dtos.customer.request.CustomerDtoSaveRequest;
+import br.com.fourbank.api.dto.customer.request.CustomerDtoSaveRequest;
 import br.com.fourbank.api.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
