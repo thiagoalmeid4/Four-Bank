@@ -14,6 +14,7 @@ import org.hibernate.validator.constraints.br.CPF;
 @Data
 public class CustomerDtoSaveRequest {
 
+    @NotNull(message = "Nome deve ser informado")
     private String name;
 
     @Email(message = "Formato de email inválido")
@@ -31,6 +32,9 @@ public class CustomerDtoSaveRequest {
     @NotNull(message = "Cpf deve ser informado")
     @CPF(message = "Cpf inválido")
     private String cpf;
+    
+    @NotNull(message = "Data de nascimento deve ser informada")
+    @Pattern(regexp = "\\d{2}/\\d{2}/\\d{4}", message = "Formato de data de nascimento inválido")
     private String dateBirth;
 
 }
