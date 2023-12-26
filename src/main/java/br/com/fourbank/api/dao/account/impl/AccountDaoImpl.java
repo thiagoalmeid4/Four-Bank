@@ -57,5 +57,31 @@ public class AccountDaoImpl implements AccountDao {
                 Integer.class);
         return count > 0;
     }
-    
+
+    @Override
+    public void savePixKey(long customerId, int typeKey) {
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withFunctionName("registrar_chave_pix");
+
+        SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
+                .addValue("p_cliente_id", customerId)
+                .addValue("p_tipo_chave", typeKey);
+
+        try{
+            jdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
+            jdbcCall.execute(sqlParameterSource);
+
+        }catch (Exception e){
+            try{
+                jdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
+
+            }catch(Exception ex){
+                throw new FourBankException("Erro ao registrar chave pix", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            }
+
+            e.printStackTrace();
+            throw new FourBankException("Erro ao registrar chave pix", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
 }

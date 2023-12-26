@@ -1,6 +1,7 @@
 package br.com.fourbank.api.service;
 
 import br.com.fourbank.api.dao.account.AccountDao;
+import br.com.fourbank.api.enums.TypePixKey;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,13 @@ public class AccountService {
         String accountAgency = accontAgencyGenerator();
 
         accountDao.saveAccount(customerId, accountNumber, accountAgency);
+    }
+
+    public void savePixKey(long customerId, String typeKey){
+
+        int type = TypePixKey.valueOf(typeKey).getType();
+
+        accountDao.savePixKey(customerId, type);
     }
 
     private String accountNumberGenerator() {
