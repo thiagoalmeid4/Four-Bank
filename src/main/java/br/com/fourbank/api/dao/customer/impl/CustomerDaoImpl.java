@@ -5,6 +5,7 @@ import br.com.fourbank.api.dto.customer.request.CustomerDtoSaveRequest;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 
 import java.sql.Types;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -71,5 +72,17 @@ public class CustomerDaoImpl implements CustomerDao {
         int count = jdbcTemplate.queryForObject(query, new Object[] { phone }, new int[] { Types.VARCHAR },
                 Integer.class);
         return count > 0;
+    }
+
+    @Override
+    public Map<String, Object> getDataAuthentication(String login) {
+        String query = "SELECT * FROM OBTER_DADOS_AUTENTICACAO(?)";
+        try {
+            Map<String, Object> result = jdbcTemplate.queryForMap(query, new Object[] { login });
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
