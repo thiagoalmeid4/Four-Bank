@@ -2,6 +2,9 @@ package br.com.fourbank.api.dao.account.impl;
 
 import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.err.exceptions.FourBankException;
+
+import java.sql.Types;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -14,7 +17,7 @@ public class AccountDaoImpl implements AccountDao {
 
     private JdbcTemplate jdbcTemplate;
 
-    public AccountDaoImpl(JdbcTemplate jdbcTemplate){
+    public AccountDaoImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -28,16 +31,16 @@ public class AccountDaoImpl implements AccountDao {
                 .addValue("p_nr_conta", accountNumber)
                 .addValue("p_nr_agencia", accountAgency);
 
-        try{
+        try {
             simpleJdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
             simpleJdbcCall.execute(sqlParameterSource);
 
-        }catch (Exception e){
+        } catch (Exception e) {
 
-            try{
+            try {
                 simpleJdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
 
-            }catch (Exception ex){
+            } catch (Exception ex) {
 
                 throw new RuntimeException();
             }
@@ -46,4 +49,13 @@ public class AccountDaoImpl implements AccountDao {
         }
 
     }
+
+    @Override
+    public boolean checkAccountExistence(long customerId) {
+        String query = "SELECT COUNT(1) FROM TB_CONTA WHERE FK_NR_ID_CLIENTE = ?";
+        int count = jdbcTemplate.queryForObject(query, new Object[] { customerId }, new int[] { Types.BIGINT },
+                Integer.class);
+        return count > 0;
+    }
+    
 }
