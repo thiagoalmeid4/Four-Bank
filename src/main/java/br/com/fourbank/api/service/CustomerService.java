@@ -8,19 +8,23 @@ import br.com.fourbank.api.err.exceptions.FourBankException;
 import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CustomerService {
 
     private CustomerDao customerDao;
+    private PasswordEncoder passwordEncoder;
 
-    public  CustomerService(CustomerDao customerDao){
+    public  CustomerService(CustomerDao customerDao, PasswordEncoder passwordEncoder){
         this.customerDao = customerDao;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public void saveCustomer(CustomerDtoSaveRequest customer){
         checkBeforeSaving(customer);
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         customerDao.saveCustomer(customer);
     }
 
@@ -39,4 +43,5 @@ public class CustomerService {
             throw new FourBankException(errors, HttpStatus.CONFLICT.value());
         }   
     }
+
 }

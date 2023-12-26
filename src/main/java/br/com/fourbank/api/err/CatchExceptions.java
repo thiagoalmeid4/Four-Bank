@@ -21,7 +21,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @ControllerAdvice
 public class CatchExceptions extends ResponseEntityExceptionHandler {
 
-
     private List<ErrResponse> errors;
 
     @Override
@@ -31,7 +30,7 @@ public class CatchExceptions extends ResponseEntityExceptionHandler {
         errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(err -> {
             errors.add(new ErrResponse(err.getDefaultMessage(), HttpStatus.BAD_REQUEST.value(),
-                    ((ServletWebRequest) request).getRequest().getRequestURI(), LocalDateTime.now()));
+                    ((ServletWebRequest) request).getRequest().getRequestURI(), LocalDateTime.now().toString()));
         });
 
         return new ResponseEntity<Object>(errors, HttpStatus.BAD_REQUEST);
@@ -41,10 +40,15 @@ public class CatchExceptions extends ResponseEntityExceptionHandler {
     public ResponseEntity<?> fourbankException(FourBankException ex, HttpServletRequest request) {
 
         errors = ex.getErrors();
-        for(var error : errors) {
-            error.setPath(request.getRequestURI());
+        if (errors != null) {
+            for (var error : errors) {
+                error.setPath(request.getRequestURI());
+            }
+            return new ResponseEntity<>(errors, HttpStatus.valueOf(ex.getStatus()));
         }
-        return new ResponseEntity<>(errors, HttpStatus.valueOf(ex.getStatus()));
+        return new ResponseEntity<>(new ErrResponse(ex.getMessage(), ex.getStatus(), request.getRequestURI(),
+                LocalDateTime.now().toString()),
+                HttpStatus.valueOf(ex.getStatus()));
     }
 
 }
