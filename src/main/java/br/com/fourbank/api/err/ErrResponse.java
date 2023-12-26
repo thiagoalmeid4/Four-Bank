@@ -14,13 +14,20 @@ public class ErrResponse {
     private String message;
     private int status;
     private String path;
-    private LocalDateTime timestamp;
+    private String timestamp;
 
     public ErrResponse(String message, int status){
         this.message = message;
         this.status = status;
         this.path = "";
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = LocalDateTime.now().toString();
+    }
+
+    public ErrResponse(String message, int status, String path){
+        this.message = message;
+        this.status = status;
+        this.path = path;
+        this.timestamp = LocalDateTime.now().toString();
     }
 
 }
