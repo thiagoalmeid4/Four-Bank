@@ -5,7 +5,7 @@
 -- Dumped from database version 15.4
 -- Dumped by pg_dump version 15.4
 
--- Started on 2023-12-26 11:36:16
+-- Started on 2023-12-26 11:42:33
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -135,7 +135,7 @@ CREATE SEQUENCE public.tb_cliente_nr_id_cliente_seq
 ALTER TABLE public.tb_cliente_nr_id_cliente_seq OWNER TO postgres;
 
 --
--- TOC entry 3374 (class 0 OID 0)
+-- TOC entry 3366 (class 0 OID 0)
 -- Dependencies: 214
 -- Name: tb_cliente_nr_id_cliente_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -175,7 +175,7 @@ CREATE SEQUENCE public.tb_conta_nr_id_conta_seq
 ALTER TABLE public.tb_conta_nr_id_conta_seq OWNER TO postgres;
 
 --
--- TOC entry 3375 (class 0 OID 0)
+-- TOC entry 3367 (class 0 OID 0)
 -- Dependencies: 216
 -- Name: tb_conta_nr_id_conta_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -214,7 +214,7 @@ CREATE SEQUENCE public.tb_pix_chaves_nr_id_chave_seq
 ALTER TABLE public.tb_pix_chaves_nr_id_chave_seq OWNER TO postgres;
 
 --
--- TOC entry 3376 (class 0 OID 0)
+-- TOC entry 3368 (class 0 OID 0)
 -- Dependencies: 218
 -- Name: tb_pix_chaves_nr_id_chave_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -255,7 +255,7 @@ CREATE SEQUENCE public.tb_transacoes_nr_id_transacao_seq
 ALTER TABLE public.tb_transacoes_nr_id_transacao_seq OWNER TO postgres;
 
 --
--- TOC entry 3377 (class 0 OID 0)
+-- TOC entry 3369 (class 0 OID 0)
 -- Dependencies: 220
 -- Name: tb_transacoes_nr_id_transacao_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -293,86 +293,6 @@ ALTER TABLE ONLY public.tb_pix_chaves ALTER COLUMN nr_id_chave SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.tb_transacoes ALTER COLUMN nr_id_transacao SET DEFAULT nextval('public.tb_transacoes_nr_id_transacao_seq'::regclass);
-
-
---
--- TOC entry 3362 (class 0 OID 117886)
--- Dependencies: 215
--- Data for Name: tb_cliente; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tb_cliente (nr_id_cliente, ds_email, ds_senha, dt_cadastro, dt_nascimento, nm_cliente, nr_cpf, nr_telefone) FROM stdin;
-6	cliente@email.com	senha123	2023-12-21 11:20:58.734019-04	Nome do cliente	1990-01-01	123.456.789-01	+55 11 98765-4321
-10	teste@email.com	$2a$10$4lqSuWGj9Zstd//.48GHYexVnEGOppe4BMXNqkCsvZNR7L3iQi02C	2023-12-25 22:27:08.090486-04	2002-08-7	2002-08-7	75447081289	(92) 99411-7559
-\.
-
-
---
--- TOC entry 3364 (class 0 OID 117899)
--- Dependencies: 217
--- Data for Name: tb_conta; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tb_conta (vl_saldo_conta, fk_nr_id_cliente, nr_id_conta, nr_agencia, nr_conta) FROM stdin;
-100.00	6	1	2456	853216
-100.00	10	4	3656	45616947
-\.
-
-
---
--- TOC entry 3366 (class 0 OID 117914)
--- Dependencies: 219
--- Data for Name: tb_pix_chaves; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tb_pix_chaves (fk_nr_id_conta, nr_id_chave, ds_chave, tp_chave) FROM stdin;
-\.
-
-
---
--- TOC entry 3368 (class 0 OID 117925)
--- Dependencies: 221
--- Data for Name: tb_transacoes; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.tb_transacoes (tp_transacao, vl_transacao, fk_nr_id_conta_destino, fk_nr_id_conta_origem, nr_id_transacao, dt_transacao) FROM stdin;
-\.
-
-
---
--- TOC entry 3378 (class 0 OID 0)
--- Dependencies: 214
--- Name: tb_cliente_nr_id_cliente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.tb_cliente_nr_id_cliente_seq', 10, true);
-
-
---
--- TOC entry 3379 (class 0 OID 0)
--- Dependencies: 216
--- Name: tb_conta_nr_id_conta_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.tb_conta_nr_id_conta_seq', 4, true);
-
-
---
--- TOC entry 3380 (class 0 OID 0)
--- Dependencies: 218
--- Name: tb_pix_chaves_nr_id_chave_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.tb_pix_chaves_nr_id_chave_seq', 1, false);
-
-
---
--- TOC entry 3381 (class 0 OID 0)
--- Dependencies: 220
--- Name: tb_transacoes_nr_id_transacao_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.tb_transacoes_nr_id_transacao_seq', 1, false);
 
 
 --
@@ -501,7 +421,7 @@ ALTER TABLE ONLY public.tb_pix_chaves
     ADD CONSTRAINT fkop5lkkamm4essj4p3p44s9lw7 FOREIGN KEY (fk_nr_id_conta) REFERENCES public.tb_conta(nr_id_conta);
 
 
--- Completed on 2023-12-26 11:36:16
+-- Completed on 2023-12-26 11:42:34
 
 --
 -- PostgreSQL database dump complete
