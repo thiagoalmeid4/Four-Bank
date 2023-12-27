@@ -32,7 +32,7 @@ public class CustomerDaoImpl implements CustomerDao {
                 .addValue("p_ds_email", customer.getEmail())
                 .addValue("p_ds_senha", customer.getPassword())
                 .addValue("p_dt_nascimento", customer.getDateBirth())
-                .addValue("p_nm_cliente", customer.getDateBirth())
+                .addValue("p_nm_cliente", customer.getName())
                 .addValue("p_nr_cpf", customer.getCpf())
                 .addValue("p_nr_telefone", customer.getPhone());
 

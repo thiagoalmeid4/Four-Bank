@@ -31,7 +31,7 @@ public class AccountService {
 
     public void savePixKey(long customerId, String typeKey){
 
-        int type = TypePixKey.valueOf(typeKey).getType();
+        int type = TypePixKey.valueOf(typeKey.toUpperCase()).getType();
 
         accountDao.savePixKey(customerId, type);
     }
