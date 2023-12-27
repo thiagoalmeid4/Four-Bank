@@ -5,9 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class AccountController {
@@ -26,5 +24,11 @@ public class AccountController {
         var customerId = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         accountService.savePixKey(Long.parseLong(customerId.toString()), typeKey);
         return new ResponseEntity<>(HttpStatus.CREATED);
+    }
+
+    @GetMapping(path = "/find-account/pix")
+    public ResponseEntity<?>getAccountByPix(@RequestParam ("key") String pixKey){
+        var account = accountService.getAccountByPixKey(pixKey);
+        return new ResponseEntity<>(account, HttpStatus.OK);
     }
 }

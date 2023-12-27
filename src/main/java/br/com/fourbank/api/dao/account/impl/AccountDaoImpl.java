@@ -1,8 +1,12 @@
 package br.com.fourbank.api.dao.account.impl;
 
 import br.com.fourbank.api.dao.account.AccountDao;
+import br.com.fourbank.api.dto.account.response.AccountDestinyDtoResponse;
+import br.com.fourbank.api.dto.account.response.AccountOriginDtoResponse;
+import br.com.fourbank.api.dto.transaction.response.TransactionDtoResponse;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 
+import java.math.BigDecimal;
 import java.sql.Types;
 
 import org.springframework.http.HttpStatus;
@@ -51,7 +55,7 @@ public class AccountDaoImpl implements AccountDao {
     }
 
     @Override
-    public boolean checkAccountExistence(long customerId) {
+    public Boolean checkAccountExistence(long customerId) {
         String query = "SELECT COUNT(1) FROM TB_CONTA WHERE FK_NR_ID_CLIENTE = ?";
         int count = jdbcTemplate.queryForObject(query, new Object[] { customerId }, new int[] { Types.BIGINT },
                 Integer.class);
@@ -82,6 +86,92 @@ public class AccountDaoImpl implements AccountDao {
             e.printStackTrace();
             throw new FourBankException("Erro ao registrar chave pix", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public Long accountByAgencyNumber(String agency, String number) {
+        String query = "SELECT NR_ID_CONTA FROM TB_CONTA WHERE NR_CONTA = ? AND NR_AGENCIA = ?";
+        try {
+            Long idAccount = jdbcTemplate.queryForObject(query, new Object[]{number, agency}, Long.class);
+            return idAccount;
+        }catch (Exception e){
+            return null;
+        }
+
+    }
+
+    @Override
+    public Long accountIdByCustomerId(Long customerId) {
+
+        String query = "SELECT NR_ID_CONTA FROM TB_CONTA WHERE FK_NR_ID_CLIENTE = ?";
+
+        Long idAccount = jdbcTemplate.queryForObject(query, new Object[]{customerId},Long.class);
+
+        return idAccount;
+    }
+
+    @Override
+    public AccountDestinyDtoResponse accountByPixKey(String pixKey) {
+
+        String query = "select nm_cliente, nr_id_cliente, tb_conta.nr_id_conta \n" +
+                "from tb_cliente join tb_conta\n" +
+                "on nr_id_cliente = fk_nr_id_cliente join tb_pix_chaves\n" +
+                "on nr_id_conta = fk_nr_id_conta\n" +
+                "where ds_chave = ?";
+        try {
+            var result = jdbcTemplate.queryForMap(query, new Object[]{pixKey}, new int[]{Types.VARCHAR});
+            var account = new AccountDestinyDtoResponse();
+            account.setIdAccount((Long) result.get("nr_id_conta"));
+            account.setNameCustomer((String) result.get("nm_cliente"));
+            account.setIdCustomer((Long) result.get("nr_id_cliente"));
+            return account;
+        }catch (Exception e){
+            return null;
+        }
+    }
+
+    @Override
+    public TransactionDtoResponse saveTransaction(long accountOrigin, long accountDestiny, BigDecimal value, int type) {
+
+    SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+            .withFunctionName("realizar_transferencia");
+
+    SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
+            .addValue("p_id_conta_origem",accountDestiny)
+            .addValue("p_id_conta_destino", accountDestiny)
+            .addValue("p_valor_transferencia", value)
+            .addValue("p_tipo_transacao", type);
+
+    try{
+        jdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
+        var result = jdbcCall.execute(sqlParameterSource);
+        var transactionDtoResponse = new TransactionDtoResponse();
+    }catch (Exception e){
+        try{
+            jdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
+
+        }catch (Exception ex){
+            throw new FourBankException("Erro interno ao realizar transferência",HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+        }
+        e.printStackTrace();
+        throw new FourBankException("Erro interno ao realizar transferência",HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+        return null;
+    }
+
+    @Override
+    public AccountOriginDtoResponse infoAccount(long idCustomer) {
+
+        String query = "SELECT * FROM OBTER_SALDO_CONTA(?)";
+        var result = jdbcTemplate.queryForMap(query,new Object[]{idCustomer},new int[]{Types.BIGINT});
+
+        var accountOrigin = new AccountOriginDtoResponse();
+        accountOrigin.setAccountNumber((String) result.get("nr_conta"));
+        accountOrigin.setAgency((String) result.get("nr_agencia"));
+        accountOrigin.setValue((BigDecimal) result.get("saldo_conta"));
+
+        return accountOrigin;
     }
 
 }

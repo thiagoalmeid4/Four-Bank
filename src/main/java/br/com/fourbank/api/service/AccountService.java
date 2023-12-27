@@ -1,6 +1,7 @@
 package br.com.fourbank.api.service;
 
 import br.com.fourbank.api.dao.account.AccountDao;
+import br.com.fourbank.api.dto.account.response.AccountDestinyDtoResponse;
 import br.com.fourbank.api.enums.TypePixKey;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 
@@ -36,6 +37,13 @@ public class AccountService {
         accountDao.savePixKey(customerId, type);
     }
 
+    public AccountDestinyDtoResponse getAccountByPixKey(String pixKey){
+        var account = accountDao.accountByPixKey(pixKey);
+        if(account == null){
+            throw new FourBankException("Chave não encontrada", HttpStatus.NOT_FOUND.value());
+        }
+        return account;
+    }
     private String accountNumberGenerator() {
 
         Random random = new Random();
