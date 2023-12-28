@@ -15,7 +15,9 @@ public class TransactionService {
 
     private AccountDao accountDao;
 
-    public TransactionService(AccountDao accountDao){this.accountDao = accountDao;}
+    public TransactionService(AccountDao accountDao) {
+        this.accountDao = accountDao;
+    }
 
     public TransactionDtoResponse transaction(TransactionPixDtoRequest transactionPixDtoRequest, Long idCustomer) {
 
@@ -23,16 +25,17 @@ public class TransactionService {
         if (accountDestiny == null) {
             throw new FourBankException("Chave não encontrada", HttpStatus.NOT_FOUND.value());
         }
-        checkBalance(idCustomer,transactionPixDtoRequest.getValue());
+        checkBalance(idCustomer, transactionPixDtoRequest.getValue());
         var accountOrigin = accountDao.accountIdByCustomerId(idCustomer);
-        var result = accountDao.saveTransaction(accountOrigin,accountDestiny.getIdAccount(),transactionPixDtoRequest.getValue(), TypeTransaction.PIX.getType());
+        var result = accountDao.saveTransaction(accountOrigin, accountDestiny.getIdAccount(),
+                transactionPixDtoRequest.getValue(), TypeTransaction.PIX.getType());
         return result;
     }
 
-    private void checkBalance(Long idCustomer, BigDecimal value){
+    private void checkBalance(Long idCustomer, BigDecimal value) {
         var account = accountDao.infoAccount(idCustomer);
 
-        if(account.getValue().compareTo(value) < 0){
+        if (account.getValue().compareTo(value) < 0) {
             throw new FourBankException("Saldo insuficiente", HttpStatus.FORBIDDEN.value());
         }
     }

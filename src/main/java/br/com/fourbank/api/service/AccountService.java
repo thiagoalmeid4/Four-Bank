@@ -30,20 +30,21 @@ public class AccountService {
         accountDao.saveAccount(customerId, accountNumber, accountAgency);
     }
 
-    public void savePixKey(long customerId, String typeKey){
+    public void savePixKey(long customerId, String typeKey) {
 
         int type = TypePixKey.valueOf(typeKey.toUpperCase()).getType();
 
         accountDao.savePixKey(customerId, type);
     }
 
-    public AccountDestinyDtoResponse getAccountByPixKey(String pixKey){
+    public AccountDestinyDtoResponse getAccountByPixKey(String pixKey) {
         var account = accountDao.accountByPixKey(pixKey);
-        if(account == null){
+        if (account == null) {
             throw new FourBankException("Chave não encontrada", HttpStatus.NOT_FOUND.value());
         }
         return account;
     }
+
     private String accountNumberGenerator() {
 
         Random random = new Random();

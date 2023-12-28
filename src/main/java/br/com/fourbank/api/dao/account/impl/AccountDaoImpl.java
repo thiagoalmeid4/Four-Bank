@@ -71,15 +71,15 @@ public class AccountDaoImpl implements AccountDao {
                 .addValue("p_cliente_id", customerId)
                 .addValue("p_tipo_chave", typeKey);
 
-        try{
+        try {
             jdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
             jdbcCall.execute(sqlParameterSource);
 
-        }catch (Exception e){
-            try{
+        } catch (Exception e) {
+            try {
                 jdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
 
-            }catch(Exception ex){
+            } catch (Exception ex) {
                 throw new FourBankException("Erro ao registrar chave pix", HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
 
@@ -92,9 +92,10 @@ public class AccountDaoImpl implements AccountDao {
     public Long accountByAgencyNumber(String agency, String number) {
         String query = "SELECT NR_ID_CONTA FROM TB_CONTA WHERE NR_CONTA = ? AND NR_AGENCIA = ?";
         try {
-            Long idAccount = jdbcTemplate.queryForObject(query, new Object[]{number, agency}, Long.class);
+            Long idAccount = jdbcTemplate.queryForObject(query, new Object[] { number, agency },
+                    new int[] { Types.VARCHAR, Types.VARCHAR }, Long.class);
             return idAccount;
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
 
@@ -105,7 +106,8 @@ public class AccountDaoImpl implements AccountDao {
 
         String query = "SELECT NR_ID_CONTA FROM TB_CONTA WHERE FK_NR_ID_CLIENTE = ?";
 
-        Long idAccount = jdbcTemplate.queryForObject(query, new Object[]{customerId},Long.class);
+        Long idAccount = jdbcTemplate.queryForObject(query, new Object[] { customerId }, new int[] { Types.BIGINT },
+                Long.class);
 
         return idAccount;
     }
@@ -119,13 +121,13 @@ public class AccountDaoImpl implements AccountDao {
                 "on nr_id_conta = fk_nr_id_conta\n" +
                 "where ds_chave = ?";
         try {
-            var result = jdbcTemplate.queryForMap(query, new Object[]{pixKey}, new int[]{Types.VARCHAR});
+            var result = jdbcTemplate.queryForMap(query, new Object[] { pixKey }, new int[] { Types.VARCHAR });
             var account = new AccountDestinyDtoResponse();
             account.setIdAccount((Long) result.get("nr_id_conta"));
             account.setNameCustomer((String) result.get("nm_cliente"));
             account.setIdCustomer((Long) result.get("nr_id_cliente"));
             return account;
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
     }
@@ -133,38 +135,48 @@ public class AccountDaoImpl implements AccountDao {
     @Override
     public TransactionDtoResponse saveTransaction(long accountOrigin, long accountDestiny, BigDecimal value, int type) {
 
-    SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
-            .withFunctionName("realizar_transferencia");
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withFunctionName("realizar_transferencia");
 
-    SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
-            .addValue("p_id_conta_origem",accountDestiny)
-            .addValue("p_id_conta_destino", accountDestiny)
-            .addValue("p_valor_transferencia", value)
-            .addValue("p_tipo_transacao", type);
+        SqlParameterSource sqlParameterSource = new MapSqlParameterSource()
+                .addValue("p_id_conta_origem", accountOrigin)
+                .addValue("p_id_conta_destino", accountDestiny)
+                .addValue("p_valor_transferencia", value.doubleValue())
+                .addValue("p_tipo_transacao", type);
 
-    try{
-        jdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
-        var result = jdbcCall.execute(sqlParameterSource);
-        var transactionDtoResponse = new TransactionDtoResponse();
-    }catch (Exception e){
-        try{
-            jdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
+        try {
+            jdbcCall.getJdbcTemplate().getDataSource().getConnection().setAutoCommit(false);
+            var result = jdbcCall.execute(sqlParameterSource);
+            var transactionDtoResponse = new TransactionDtoResponse();
+            transactionDtoResponse.setCustomerNameDestiny((String) result.get("nome_cliente_destino"));
+            transactionDtoResponse.setCustomerNameOrigin((String) result.get("nome_cliente_origem"));
+            transactionDtoResponse.setDateTransaction(result.get("dt_transacao").toString());
+            transactionDtoResponse.setValue(
+                    new BigDecimal(Float.parseFloat(result.get("valor_transferencia").toString())).setScale(2));
+            transactionDtoResponse.setTypeTransaction((Integer) result.get("tipo_transacao"));
+            transactionDtoResponse.setIdTransaction((Long) result.get("id_transacao"));
+            return transactionDtoResponse;
+        } catch (Exception e) {
+            try {
+                jdbcCall.getJdbcTemplate().getDataSource().getConnection().rollback();
 
-        }catch (Exception ex){
-            throw new FourBankException("Erro interno ao realizar transferência",HttpStatus.INTERNAL_SERVER_ERROR.value());
+            } catch (Exception ex) {
+                throw new FourBankException("Erro interno ao realizar transferência",
+                        HttpStatus.INTERNAL_SERVER_ERROR.value());
 
+            }
+            e.printStackTrace();
+            throw new FourBankException("Erro interno ao realizar transferência",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
-        e.printStackTrace();
-        throw new FourBankException("Erro interno ao realizar transferência",HttpStatus.INTERNAL_SERVER_ERROR.value());
-    }
-        return null;
+
     }
 
     @Override
     public AccountOriginDtoResponse infoAccount(long idCustomer) {
 
         String query = "SELECT * FROM OBTER_SALDO_CONTA(?)";
-        var result = jdbcTemplate.queryForMap(query,new Object[]{idCustomer},new int[]{Types.BIGINT});
+        var result = jdbcTemplate.queryForMap(query, new Object[] { idCustomer }, new int[] { Types.BIGINT });
 
         var accountOrigin = new AccountOriginDtoResponse();
         accountOrigin.setAccountNumber((String) result.get("nr_conta"));

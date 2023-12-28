@@ -21,7 +21,7 @@ public class AuthService {
 
     private PasswordEncoder passwordEncoder;
 
-    public AuthService(TokenUtils tokenUtils , CustomerDao customerDao, PasswordEncoder passwordEncoder) {
+    public AuthService(TokenUtils tokenUtils, CustomerDao customerDao, PasswordEncoder passwordEncoder) {
         this.tokenUtils = tokenUtils;
         this.customerDao = customerDao;
         this.passwordEncoder = passwordEncoder;

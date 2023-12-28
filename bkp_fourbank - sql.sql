@@ -18,6 +18,50 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+
+-- FUNCTION: public.obter_lista_transacoes(bigint)
+
+-- DROP FUNCTION IF EXISTS public.obter_lista_transacoes(bigint);
+
+CREATE OR REPLACE FUNCTION public.obter_lista_transacoes(
+	p_id_usuario bigint)
+    RETURNS TABLE(origem_destino character varying, nome_cliente character varying, valor numeric, tipo_transacao integer, data_transferencia character varying) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+
+AS $BODY$
+BEGIN
+    RETURN QUERY
+    SELECT
+        CASE
+            WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN 'ENTRADA'::varchar
+            WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN 'SAÍDA'::varchar
+        END AS origem_destino,
+        COALESCE((SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = c1.fk_nr_id_cliente)::varchar, ''::varchar) AS nome_cliente,
+        t.vl_transacao::numeric AS valor,
+        t.tp_transacao::integer AS tipo_transacao,
+        TO_CHAR(t.dt_transacao::timestamp, 'DD/MM/YYYY HH24:MI:SS')::varchar AS data_transferencia
+    FROM
+        tb_transacoes t
+    LEFT JOIN
+        tb_conta c ON t.fk_nr_id_conta_origem = c.nr_id_conta OR t.fk_nr_id_conta_destino = c.nr_id_conta
+    LEFT JOIN
+        tb_conta c1 ON t.fk_nr_id_conta_origem = c1.nr_id_conta
+    WHERE
+        c.fk_nr_id_cliente = p_id_usuario
+    ORDER BY
+        t.dt_transacao DESC;
+
+    RETURN;
+END;
+$BODY$;
+
+ALTER FUNCTION public.obter_lista_transacoes(bigint)
+    OWNER TO postgres;
+
+
 -- FUNCTION: public.realizar_transferencia(bigint, bigint, numeric, integer)
 
 -- DROP FUNCTION IF EXISTS public.realizar_transferencia(bigint, bigint, numeric, integer);
@@ -64,8 +108,8 @@ BEGIN
 
     -- Inserir a transação na tabela tb_transacoes
     INSERT INTO tb_transacoes(tp_transacao, vl_transacao, fk_nr_id_conta_origem, fk_nr_id_conta_destino, dt_transacao)
-    VALUES (p_tipo_transacao, p_valor_transferencia, p_id_conta_origem, p_id_conta_destino, CURRENT_TIMESTAMP)
-    RETURNING nr_id_transacao, CURRENT_TIMESTAMP, p_tipo_transacao, p_valor_transferencia INTO id_transacao, dt_transacao, tipo_transacao, valor_transferencia;
+    VALUES (p_tipo_transacao, p_valor_transferencia, p_id_conta_origem, p_id_conta_destino, TO_CHAR(CURRENT_TIMESTAMP, 'DD/MM/YYYY HH24:MI:SS'))
+    RETURNING nr_id_transacao, TO_CHAR(CURRENT_TIMESTAMP, 'DD/MM/YYYY HH24:MI:SS'), p_tipo_transacao, p_valor_transferencia INTO id_transacao, dt_transacao, tipo_transacao, valor_transferencia;
 
     -- Retornar os resultados
     RETURN QUERY SELECT nome_cliente_origem, nome_cliente_destino, dt_transacao, tipo_transacao, valor_transferencia, id_transacao;
@@ -75,7 +119,6 @@ $BODY$;
 
 ALTER FUNCTION public.realizar_transferencia(bigint, bigint, numeric, integer)
     OWNER TO postgres;
-
 
 -- FUNCTION: public.registrar_chave_pix(bigint, integer)
 
