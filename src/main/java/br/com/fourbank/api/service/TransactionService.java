@@ -1,14 +1,17 @@
 package br.com.fourbank.api.service;
 
+import br.com.fourbank.api.config.utils.DateFormatter;
 import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.dto.transaction.request.TransactionPixDtoRequest;
 import br.com.fourbank.api.dto.transaction.response.TransactionDtoResponse;
+import br.com.fourbank.api.dto.transaction.response.TransactionHistoryDtoResponse;
 import br.com.fourbank.api.enums.TypeTransaction;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class TransactionService {
@@ -30,6 +33,14 @@ public class TransactionService {
         var result = accountDao.saveTransaction(accountOrigin, accountDestiny.getIdAccount(),
                 transactionPixDtoRequest.getValue(), TypeTransaction.PIX.getType());
         result.setTypeTransaction(TypeTransaction.PIX.getDescription());
+        return result;
+    }
+
+    public List<TransactionHistoryDtoResponse> transactionHistory(Long idCustomer) {
+        var result = accountDao.transactionHistory(idCustomer);
+        result.stream().forEach(transaction -> {
+            transaction.setDateTransaction(DateFormatter.formatarData(transaction.getDateTransaction()));
+        });
         return result;
     }
 

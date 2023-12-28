@@ -1,0 +1,280 @@
+{
+	"info": {
+		"_postman_id": "a085263b-04bd-45f6-b477-482512187b32",
+		"name": "FourBank",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29483291"
+	},
+	"item": [
+		{
+			"name": "Salvar cliente",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\":\"teste\",\r\n    \"email\":\"teste@email.com\",\r\n    \"password\":\"123456\",\r\n    \"phone\":\"(92) 99411-7559\",\r\n    \"cpf\":\"75447081289\",\r\n    \"dateBirth\":\"08/05/2000\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api-fourbank/save-customer",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"save-customer"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {\r",
+							"    var responseBody = pm.response.json();\r",
+							"    pm.globals.set(\"token\", responseBody.token);\r",
+							"} catch (error) {\r",
+							"    console.log('Erro ao analisar a resposta como JSON:', error);\r",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"login\":\"teste@email.com\",\r\n    \"password\":\"123456\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api-fourbank/get-token",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"get-token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Gerar Conta",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api-fourbank/save-account",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"save-account"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Registrar chave pix",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api-fourbank/save-pix-key?type_key=",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"save-pix-key"
+					],
+					"query": [
+						{
+							"key": "type_key",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Transferência via pix",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"pixKey\":\"teste1@email.com\",\r\n    \"value\":10\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api-fourbank/transaction/pix",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"transaction",
+						"pix"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Consulta chave pix",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api-fourbank/find-account/pix?key=",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"find-account",
+						"pix"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Histórico de transações",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api-fourbank/transaction/history",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"transaction",
+						"history"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Conta e saldo",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api-fourbank/account-info",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"account-info"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

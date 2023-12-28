@@ -2,12 +2,16 @@ package br.com.fourbank.api.dao.account.impl;
 
 import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.dto.account.response.AccountDestinyDtoResponse;
+import br.com.fourbank.api.dto.account.response.AccountInfoDtoResponse;
 import br.com.fourbank.api.dto.account.response.AccountOriginDtoResponse;
 import br.com.fourbank.api.dto.transaction.response.TransactionDtoResponse;
+import br.com.fourbank.api.dto.transaction.response.TransactionHistoryDtoResponse;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 
 import java.math.BigDecimal;
 import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -184,5 +188,36 @@ public class AccountDaoImpl implements AccountDao {
 
         return accountOrigin;
     }
+
+    @Override
+    public List<TransactionHistoryDtoResponse> transactionHistory(long idCustomer) {
+        
+        String query = "SELECT * FROM OBTER_TRANSACOES_CLIENTE(?)";
+        var result = jdbcTemplate.queryForList(query, idCustomer);
+        List<TransactionHistoryDtoResponse> transactionHistoryDtoResponses = new ArrayList<>();
+        for(var r : result) {
+            var transactionHistoryDtoResponse = new TransactionHistoryDtoResponse();
+            transactionHistoryDtoResponse.setDateTransaction((String) r.get("data_transferencia"));
+            transactionHistoryDtoResponse.setFlag((String) r.get("entrada_saida"));
+            transactionHistoryDtoResponse.setOriginDestiny((String) r.get("origem_destino"));
+            transactionHistoryDtoResponse.setValue(((BigDecimal) r.get("valor")).setScale(2));
+            transactionHistoryDtoResponse.setTypeTransaction((String) r.get("tipo"));
+            transactionHistoryDtoResponses.add(transactionHistoryDtoResponse);
+        }
+        return transactionHistoryDtoResponses;
+    }
+
+    @Override
+    public AccountInfoDtoResponse accountInfo(long idCustomer) {
+
+        String query = "SELECT * FROM OBTER_SALDO_CONTA(?)";
+        var result = jdbcTemplate.queryForMap(query, new Object[] { idCustomer }, new int[] { Types.BIGINT });
+        var accountInfo = new AccountInfoDtoResponse();
+        accountInfo.setAccountNumber((String) result.get("nr_conta"));
+        accountInfo.setAccountAgency((String) result.get("nr_agencia"));
+        accountInfo.setValue(((BigDecimal) result.get("saldo_conta")).setScale(2));
+        return accountInfo;
+        
+    }   
 
 }

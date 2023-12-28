@@ -31,4 +31,12 @@ public class AccountController {
         var account = accountService.getAccountByPixKey(pixKey);
         return new ResponseEntity<>(account, HttpStatus.OK);
     }
+
+    @GetMapping(path = "/account-info")
+    public ResponseEntity<?> accountInfo(){
+        var idCustomer = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var response = accountService.accountInfo(Long.parseLong(idCustomer.toString()));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    
 }
