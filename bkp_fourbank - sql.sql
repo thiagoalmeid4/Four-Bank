@@ -18,47 +18,120 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+-- FUNCTION: public.obter_saldo_conta(bigint)
 
--- FUNCTION: public.obter_lista_transacoes(bigint)
+-- DROP FUNCTION IF EXISTS public.obter_saldo_conta(bigint);
 
--- DROP FUNCTION IF EXISTS public.obter_lista_transacoes(bigint);
-
-CREATE OR REPLACE FUNCTION public.obter_lista_transacoes(
+CREATE OR REPLACE FUNCTION public.obter_saldo_conta(
 	p_id_usuario bigint)
-    RETURNS TABLE(origem_destino character varying, nome_cliente character varying, valor numeric, tipo_transacao integer, data_transferencia character varying) 
+    RETURNS TABLE(saldo_conta numeric, nr_conta character varying, nr_agencia character varying) 
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
     ROWS 1000
 
 AS $BODY$
+DECLARE
+    v_saldo_conta numeric(38,2);
+BEGIN
+    -- Obter saldo da conta
+    SELECT c.vl_saldo_conta, c.nr_conta, c.nr_agencia
+    INTO v_saldo_conta, nr_conta, nr_agencia
+    FROM tb_conta c
+    WHERE c.fk_nr_id_cliente = p_id_usuario;
+
+    -- Verificar transações do tipo 1 dentro de um minuto
+    IF EXISTS (
+        SELECT 1
+        FROM tb_transacoes t
+        WHERE t.fk_nr_id_conta_destino = (SELECT nr_id_conta FROM tb_conta WHERE fk_nr_id_cliente = p_id_usuario)
+            AND t.tp_transacao = 1
+            AND t.dt_transacao::timestamp >= (CURRENT_TIMESTAMP - interval '1 minute')::timestamp
+    ) THEN
+        -- Subtrair valor das transações de tipo 1 dentro de um minuto se for uma entrada
+        SELECT v_saldo_conta - COALESCE(SUM(t.vl_transacao), 0)
+        INTO v_saldo_conta
+        FROM tb_transacoes t
+        WHERE t.fk_nr_id_conta_destino = (SELECT nr_id_conta FROM tb_conta WHERE fk_nr_id_cliente = p_id_usuario)
+            AND t.tp_transacao = 1
+            AND t.dt_transacao::timestamp >= (CURRENT_TIMESTAMP - interval '1 minute')::timestamp;
+    END IF;
+
+    RETURN QUERY SELECT v_saldo_conta, nr_conta, nr_agencia;
+
+END;
+$BODY$;
+
+ALTER FUNCTION public.obter_saldo_conta(bigint)
+    OWNER TO postgres;
+
+-- FUNCTION: public.obter_lista_transacoes(bigint)
+
+-- DROP FUNCTION IF EXISTS public.obter_lista_transacoes(bigint);
+
+-- FUNCTION: public.obter_transacoes_cliente(bigint)
+
+-- DROP FUNCTION IF EXISTS public.obter_transacoes_cliente(bigint);
+
+CREATE OR REPLACE FUNCTION public.obter_transacoes_cliente(
+    p_id_cliente bigint)
+RETURNS TABLE(
+    entrada_saida character varying,
+    origem_destino character varying,
+    valor numeric,
+    tipo character varying,
+    data_transferencia text)
+LANGUAGE 'plpgsql'
+COST 100
+VOLATILE PARALLEL UNSAFE
+ROWS 1000
+AS $BODY$
 BEGIN
     RETURN QUERY
+WITH todas_transacoes AS (
     SELECT
         CASE
-            WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN 'ENTRADA'::varchar
-            WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN 'SAÍDA'::varchar
+            WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN 'Entrada'::character varying
+            WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN 'Saída'::character varying
+        END AS entrada_saida,
+        CASE
+            WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN
+                (SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = co.fk_nr_id_cliente)::character varying
+            WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN
+                (SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = cd.fk_nr_id_cliente)::character varying
         END AS origem_destino,
-        COALESCE((SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = c1.fk_nr_id_cliente)::varchar, ''::varchar) AS nome_cliente,
-        t.vl_transacao::numeric AS valor,
-        t.tp_transacao::integer AS tipo_transacao,
-        TO_CHAR(t.dt_transacao::timestamp, 'DD/MM/YYYY HH24:MI:SS')::varchar AS data_transferencia
+        t.vl_transacao AS valor,
+        CASE
+            WHEN t.tp_transacao = 0 THEN 'PIX'::character varying
+            WHEN t.tp_transacao = 1 THEN 'TED'::character varying
+        END AS tipo,
+        TO_CHAR(t.dt_transacao::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS data_transferencia
     FROM
         tb_transacoes t
     LEFT JOIN
         tb_conta c ON t.fk_nr_id_conta_origem = c.nr_id_conta OR t.fk_nr_id_conta_destino = c.nr_id_conta
     LEFT JOIN
-        tb_conta c1 ON t.fk_nr_id_conta_origem = c1.nr_id_conta
+        tb_conta co ON t.fk_nr_id_conta_destino = co.nr_id_conta
+    LEFT JOIN
+        tb_conta cd ON t.fk_nr_id_conta_origem = cd.nr_id_conta
     WHERE
-        c.fk_nr_id_cliente = p_id_usuario
-    ORDER BY
-        t.dt_transacao DESC;
+        c.fk_nr_id_cliente = p_id_cliente
+)
 
-    RETURN;
+    SELECT *
+    FROM todas_transacoes
+    WHERE NOT (
+        todas_transacoes.tipo = 'TED'
+        AND todas_transacoes.entrada_saida = 'Entrada'
+        AND CURRENT_TIMESTAMP - todas_transacoes.data_transferencia::timestamp <= interval '1 minute'
+    )
+    ORDER BY todas_transacoes.data_transferencia DESC;
+
 END;
 $BODY$;
 
-ALTER FUNCTION public.obter_lista_transacoes(bigint)
+
+ALTER FUNCTION public.obter_transacoes_cliente(bigint)
     OWNER TO postgres;
 
 
@@ -66,16 +139,25 @@ ALTER FUNCTION public.obter_lista_transacoes(bigint)
 
 -- DROP FUNCTION IF EXISTS public.realizar_transferencia(bigint, bigint, numeric, integer);
 
+-- FUNCTION: public.realizar_transferencia(bigint, bigint, numeric, integer)
+
+-- DROP FUNCTION IF EXISTS public.realizar_transferencia(bigint, bigint, numeric, integer);
 CREATE OR REPLACE FUNCTION public.realizar_transferencia(
-	p_id_conta_origem bigint,
-	p_id_conta_destino bigint,
-	p_valor_transferencia numeric,
-	p_tipo_transacao integer)
-    RETURNS TABLE(nome_cliente_origem character varying, nome_cliente_destino character varying, dt_transacao character varying, tipo_transacao integer, valor_transferencia numeric, id_transacao bigint) 
-    LANGUAGE 'plpgsql'
-    COST 100
-    VOLATILE PARALLEL UNSAFE
-    ROWS 1000
+    p_id_conta_origem bigint,
+    p_id_conta_destino bigint,
+    p_valor_transferencia numeric,
+    p_tipo_transacao integer)
+RETURNS TABLE(
+    nome_cliente_origem character varying,
+    nome_cliente_destino character varying,
+    dt_transacao timestamp,
+    tipo_transacao integer,
+    valor_transferencia numeric,
+    id_transacao bigint)
+LANGUAGE 'plpgsql'
+COST 100
+VOLATILE PARALLEL UNSAFE
+ROWS 1000
 
 AS $BODY$
 BEGIN
@@ -108,8 +190,8 @@ BEGIN
 
     -- Inserir a transação na tabela tb_transacoes
     INSERT INTO tb_transacoes(tp_transacao, vl_transacao, fk_nr_id_conta_origem, fk_nr_id_conta_destino, dt_transacao)
-    VALUES (p_tipo_transacao, p_valor_transferencia, p_id_conta_origem, p_id_conta_destino, TO_CHAR(CURRENT_TIMESTAMP, 'DD/MM/YYYY HH24:MI:SS'))
-    RETURNING nr_id_transacao, TO_CHAR(CURRENT_TIMESTAMP, 'DD/MM/YYYY HH24:MI:SS'), p_tipo_transacao, p_valor_transferencia INTO id_transacao, dt_transacao, tipo_transacao, valor_transferencia;
+    VALUES (p_tipo_transacao, p_valor_transferencia, p_id_conta_origem, p_id_conta_destino, CURRENT_TIMESTAMP)
+    RETURNING nr_id_transacao, CURRENT_TIMESTAMP, p_tipo_transacao, p_valor_transferencia INTO id_transacao, dt_transacao, tipo_transacao, valor_transferencia;
 
     -- Retornar os resultados
     RETURN QUERY SELECT nome_cliente_origem, nome_cliente_destino, dt_transacao, tipo_transacao, valor_transferencia, id_transacao;
@@ -117,9 +199,9 @@ BEGIN
 END;
 $BODY$;
 
+
 ALTER FUNCTION public.realizar_transferencia(bigint, bigint, numeric, integer)
     OWNER TO postgres;
-
 -- FUNCTION: public.registrar_chave_pix(bigint, integer)
 
 -- DROP FUNCTION IF EXISTS public.registrar_chave_pix(bigint, integer);
