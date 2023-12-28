@@ -153,7 +153,6 @@ public class AccountDaoImpl implements AccountDao {
             transactionDtoResponse.setDateTransaction(result.get("dt_transacao").toString());
             transactionDtoResponse.setValue(
                     new BigDecimal(Float.parseFloat(result.get("valor_transferencia").toString())).setScale(2));
-            transactionDtoResponse.setTypeTransaction((Integer) result.get("tipo_transacao"));
             transactionDtoResponse.setIdTransaction((Long) result.get("id_transacao"));
             return transactionDtoResponse;
         } catch (Exception e) {

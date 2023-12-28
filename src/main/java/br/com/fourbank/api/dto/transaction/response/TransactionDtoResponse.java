@@ -19,7 +19,7 @@ public class TransactionDtoResponse {
 
     private String dateTransaction;
 
-    private int typeTransaction;
+    private String typeTransaction;
 
     private BigDecimal value;
 }

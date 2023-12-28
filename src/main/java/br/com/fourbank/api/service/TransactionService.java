@@ -29,6 +29,7 @@ public class TransactionService {
         var accountOrigin = accountDao.accountIdByCustomerId(idCustomer);
         var result = accountDao.saveTransaction(accountOrigin, accountDestiny.getIdAccount(),
                 transactionPixDtoRequest.getValue(), TypeTransaction.PIX.getType());
+        result.setTypeTransaction(TypeTransaction.PIX.getDescription());
         return result;
     }
 
