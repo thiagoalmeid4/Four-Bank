@@ -38,5 +38,13 @@ public class AccountController {
         var response = accountService.accountInfo(Long.parseLong(idCustomer.toString()));
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @GetMapping(path = "/my-pix-keys")
+    public ResponseEntity<?>pixKeysOfCustomer(){
+        var idCustomer = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var response = accountService.pixKeysOfCustomer(Long.parseLong(idCustomer.toString()));
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
     
 }

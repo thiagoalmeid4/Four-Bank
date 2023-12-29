@@ -3,6 +3,7 @@ package br.com.fourbank.api.service;
 import br.com.fourbank.api.config.utils.DateFormatter;
 import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.dto.transaction.request.TransactionPixDtoRequest;
+import br.com.fourbank.api.dto.transaction.request.TransactionTedDtoRequest;
 import br.com.fourbank.api.dto.transaction.response.TransactionDtoResponse;
 import br.com.fourbank.api.dto.transaction.response.TransactionHistoryDtoResponse;
 import br.com.fourbank.api.enums.TypeTransaction;
@@ -33,6 +34,20 @@ public class TransactionService {
         var result = accountDao.saveTransaction(accountOrigin, accountDestiny.getIdAccount(),
                 transactionPixDtoRequest.getValue(), TypeTransaction.PIX.getType());
         result.setTypeTransaction(TypeTransaction.PIX.getDescription());
+        return result;
+    }
+
+    public TransactionDtoResponse transactionTed(TransactionTedDtoRequest ted, Long idCustomer){
+
+        var accountDestiny = accountDao.accountByAgencyNumber(ted.getAgency(), ted.getAccountNumber());
+        if(accountDestiny == null){
+            throw new FourBankException("Conta não encontrada",HttpStatus.NOT_FOUND.value());
+        }
+        checkBalance(idCustomer,ted.getValue());
+        var accountOrigin = accountDao.accountIdByCustomerId(idCustomer);
+        var result = accountDao.saveTransaction(accountOrigin, accountDestiny,
+                ted.getValue(), TypeTransaction.TED.getType());
+        result.setTypeTransaction(TypeTransaction.TED.getDescription());
         return result;
     }
 

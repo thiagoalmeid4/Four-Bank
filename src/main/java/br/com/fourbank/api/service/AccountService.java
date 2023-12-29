@@ -3,12 +3,14 @@ package br.com.fourbank.api.service;
 import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.dto.account.response.AccountDestinyDtoResponse;
 import br.com.fourbank.api.dto.account.response.AccountInfoDtoResponse;
+import br.com.fourbank.api.dto.pix.response.PixKeyDtoResponse;
 import br.com.fourbank.api.enums.TypePixKey;
 import br.com.fourbank.api.err.exceptions.FourBankException;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -48,6 +50,11 @@ public class AccountService {
 
     public AccountInfoDtoResponse accountInfo(long idCustomer) {
         return accountDao.accountInfo(idCustomer);
+    }
+
+    public List<PixKeyDtoResponse> pixKeysOfCustomer(Long idCustomer){
+        var result  = accountDao.pixKeysOfCustomer(idCustomer);
+        return result;
     }
 
     private String accountNumberGenerator() {
