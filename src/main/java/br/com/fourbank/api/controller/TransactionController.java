@@ -1,6 +1,7 @@
 package br.com.fourbank.api.controller;
 
 import br.com.fourbank.api.dto.transaction.request.TransactionPixDtoRequest;
+import br.com.fourbank.api.dto.transaction.request.TransactionTedDtoRequest;
 import br.com.fourbank.api.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,14 @@ public class TransactionController {
     public ResponseEntity<?> pixTransaction(@RequestBody TransactionPixDtoRequest pixDtoRequest){
         var idCustomer = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         var response = transactionService.transaction(pixDtoRequest, Long.parseLong(idCustomer.toString()));
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @PostMapping(path = "/ted")
+    public ResponseEntity<?> tedTransaction(@RequestBody TransactionTedDtoRequest tedDtoRequest){
+        var idCustomer = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        var response = transactionService.transactionTed(tedDtoRequest, Long.parseLong(idCustomer.toString()));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }

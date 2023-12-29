@@ -3,6 +3,7 @@ package br.com.fourbank.api.dao.account;
 import br.com.fourbank.api.dto.account.response.AccountDestinyDtoResponse;
 import br.com.fourbank.api.dto.account.response.AccountInfoDtoResponse;
 import br.com.fourbank.api.dto.account.response.AccountOriginDtoResponse;
+import br.com.fourbank.api.dto.pix.response.PixKeyDtoResponse;
 import br.com.fourbank.api.dto.transaction.response.TransactionDtoResponse;
 import br.com.fourbank.api.dto.transaction.response.TransactionHistoryDtoResponse;
 
@@ -29,5 +30,7 @@ public interface AccountDao {
     List<TransactionHistoryDtoResponse> transactionHistory(long idCustomer);
 
     AccountInfoDtoResponse accountInfo(long idCustomer);
+
+    List<PixKeyDtoResponse> pixKeysOfCustomer(long idCustomer);
 
 }
