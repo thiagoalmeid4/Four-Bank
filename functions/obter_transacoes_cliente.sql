@@ -17,35 +17,31 @@ ROWS 1000
 AS $BODY$
 BEGIN
     RETURN QUERY
-WITH todas_transacoes AS (
-    SELECT
-        CASE
-            WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN 'Entrada'::character varying
-            WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN 'Saída'::character varying
-        END AS entrada_saida,
-        CASE
-            WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN
-                (SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = co.fk_nr_id_cliente)::character varying
-            WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN
-                (SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = cd.fk_nr_id_cliente)::character varying
-        END AS origem_destino,
-        t.vl_transacao AS valor,
-        CASE
-            WHEN t.tp_transacao = 0 THEN 'PIX'::character varying
-            WHEN t.tp_transacao = 1 THEN 'TED'::character varying
-        END AS tipo,
-        TO_CHAR(t.dt_transacao::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS data_transferencia
-    FROM
-        tb_transacoes t
-    LEFT JOIN
-        tb_conta c ON t.fk_nr_id_conta_origem = c.nr_id_conta OR t.fk_nr_id_conta_destino = c.nr_id_conta
-    LEFT JOIN
-        tb_conta co ON t.fk_nr_id_conta_destino = co.nr_id_conta
-    LEFT JOIN
-        tb_conta cd ON t.fk_nr_id_conta_origem = cd.nr_id_conta
-    WHERE
-        c.fk_nr_id_cliente = p_id_cliente
-)
+    WITH todas_transacoes AS (
+        SELECT
+            CASE
+                WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN 'Entrada'::character varying
+                WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN 'Saída'::character varying
+            END AS entrada_saida,
+            CASE
+                WHEN t.fk_nr_id_conta_destino = c.nr_id_conta THEN
+                    (SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = t.fk_nr_id_conta_origem)::character varying
+                WHEN t.fk_nr_id_conta_origem = c.nr_id_conta THEN
+                    (SELECT nm_cliente FROM tb_cliente WHERE nr_id_cliente = t.fk_nr_id_conta_destino)::character varying
+            END AS origem_destino,
+            t.vl_transacao AS valor,
+            CASE
+                WHEN t.tp_transacao = 0 THEN 'PIX'::character varying
+                WHEN t.tp_transacao = 1 THEN 'TED'::character varying
+            END AS tipo,
+            TO_CHAR(t.dt_transacao::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS data_transferencia
+        FROM
+            tb_transacoes t
+        LEFT JOIN
+            tb_conta c ON t.fk_nr_id_conta_origem = c.nr_id_conta OR t.fk_nr_id_conta_destino = c.nr_id_conta
+        WHERE
+            c.fk_nr_id_cliente = p_id_cliente
+    )
 
     SELECT *
     FROM todas_transacoes
@@ -58,7 +54,6 @@ WITH todas_transacoes AS (
 
 END;
 $BODY$;
-
 
 ALTER FUNCTION public.obter_transacoes_cliente(bigint)
     OWNER TO postgres;
