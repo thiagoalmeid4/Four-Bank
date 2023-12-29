@@ -4,6 +4,7 @@ import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.dto.account.response.AccountDestinyDtoResponse;
 import br.com.fourbank.api.dto.account.response.AccountInfoDtoResponse;
 import br.com.fourbank.api.dto.account.response.AccountOriginDtoResponse;
+import br.com.fourbank.api.dto.pix.response.PixKeyDtoResponse;
 import br.com.fourbank.api.dto.transaction.response.TransactionDtoResponse;
 import br.com.fourbank.api.dto.transaction.response.TransactionHistoryDtoResponse;
 import br.com.fourbank.api.err.exceptions.FourBankException;
@@ -218,6 +219,24 @@ public class AccountDaoImpl implements AccountDao {
         accountInfo.setValue(((BigDecimal) result.get("saldo_conta")).setScale(2));
         return accountInfo;
         
-    }   
+    }
+
+    @Override
+    public List<PixKeyDtoResponse> pixKeysOfCustomer(long idCustomer) {
+
+        String query = "SELECT DS_CHAVE, TP_CHAVE FROM TB_PIX_CHAVES JOIN TB_CONTA\n" +
+                "ON FK_NR_ID_CONTA = NR_ID_CONTA JOIN TB_CLIENTE\n" +
+                "ON FK_NR_ID_CLIENTE = NR_ID_CLIENTE\n" +
+                "WHERE NR_ID_CLIENTE = ?";
+        var result = jdbcTemplate.queryForList(query,idCustomer);
+        List<PixKeyDtoResponse> pixKeysDtoResponse = new ArrayList<>();
+        for(var r : result){
+            var pixKeyDtoResponse = new PixKeyDtoResponse();
+            pixKeyDtoResponse.setPixKey((String) r.get("ds_chave"));
+            pixKeyDtoResponse.setTypePixKey((String) r.get("tp_chave"));
+            pixKeysDtoResponse.add(pixKeyDtoResponse);
+        }
+        return pixKeysDtoResponse;
+    }
 
 }
