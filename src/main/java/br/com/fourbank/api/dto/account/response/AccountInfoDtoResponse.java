@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class AccountInfoDtoResponse {
 
+    private String customerName;
     private String accountNumber;
     private String accountAgency;
     private BigDecimal value;

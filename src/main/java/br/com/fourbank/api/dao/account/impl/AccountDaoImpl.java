@@ -217,6 +217,7 @@ public class AccountDaoImpl implements AccountDao {
         accountInfo.setAccountNumber((String) result.get("nr_conta"));
         accountInfo.setAccountAgency((String) result.get("nr_agencia"));
         accountInfo.setValue(((BigDecimal) result.get("saldo_conta")).setScale(2));
+        accountInfo.setCustomerName((String) result.get("nome_cliente"));
         return accountInfo;
         
     }

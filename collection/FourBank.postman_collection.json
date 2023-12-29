@@ -275,6 +275,75 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Transferência via ted",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"agency\":\"4405\",\r\n    \"accountNumber\":\"16656938\",\r\n    \"value\":10\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:8080/api-fourbank/transaction/ted",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"transaction",
+						"ted"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Consultar chaves pix",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api-fourbank/my-pix-keys",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api-fourbank",
+						"my-pix-keys"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }
