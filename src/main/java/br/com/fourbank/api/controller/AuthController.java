@@ -1,7 +1,9 @@
 package br.com.fourbank.api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +20,11 @@ public class AuthController {
     @PostMapping(path = "/get-token")
     public ResponseEntity<?> getToken(@RequestBody AuthDtoRequest authDtoRequest){
         return ResponseEntity.ok(authService.getToken(authDtoRequest));
+    }
+
+    @GetMapping(path = "/check-token")
+    public ResponseEntity<?> checkToken(){
+        return new ResponseEntity<>(HttpStatus.OK);
     }
     
 }
