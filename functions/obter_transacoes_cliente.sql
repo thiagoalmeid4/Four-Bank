@@ -3,17 +3,13 @@
 -- DROP FUNCTION IF EXISTS public.obter_transacoes_cliente(bigint);
 
 CREATE OR REPLACE FUNCTION public.obter_transacoes_cliente(
-    p_id_cliente bigint)
-RETURNS TABLE(
-    entrada_saida character varying,
-    origem_destino character varying,
-    valor numeric,
-    tipo character varying,
-    data_transferencia text)
-LANGUAGE 'plpgsql'
-COST 100
-VOLATILE PARALLEL UNSAFE
-ROWS 1000
+	p_id_cliente bigint)
+    RETURNS TABLE(entrada_saida character varying, origem_destino character varying, valor numeric, tipo character varying, data_transferencia text) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+
 AS $BODY$
 BEGIN
     RETURN QUERY
@@ -33,6 +29,7 @@ BEGIN
             CASE
                 WHEN t.tp_transacao = 0 THEN 'PIX'::character varying
                 WHEN t.tp_transacao = 1 THEN 'TED'::character varying
+				WHEN t.tp_transacao = 2 THEN 'TAXA'::character varying
             END AS tipo,
             TO_CHAR(t.dt_transacao::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS data_transferencia
         FROM
