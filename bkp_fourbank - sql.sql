@@ -18,26 +18,48 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
--- FUNCTION: public.obter_saldo_conta(bigint)
-
--- DROP FUNCTION IF EXISTS public.obter_saldo_conta(bigint);
-
-CREATE OR REPLACE FUNCTION public.obter_saldo_conta(
-	p_id_usuario bigint)
-    RETURNS TABLE(saldo_conta numeric, nr_conta character varying, nr_agencia character varying) 
+CREATE OR REPLACE FUNCTION public.obter_dados_autenticacao(
+	p_identificador character varying)
+    RETURNS TABLE(cliente_id bigint, cpf character varying, senha character varying) 
     LANGUAGE 'plpgsql'
     COST 100
     VOLATILE PARALLEL UNSAFE
     ROWS 1000
 
 AS $BODY$
+BEGIN
+    RETURN QUERY
+    SELECT
+        nr_id_cliente,
+        nr_cpf,
+        ds_senha
+    FROM
+        tb_cliente
+    WHERE
+        p_identificador IN (nr_cpf, ds_email, nr_telefone);
+END;
+$BODY$;
+
+ALTER FUNCTION public.obter_dados_autenticacao(character varying)
+    OWNER TO postgres;
+
+CREATE OR REPLACE FUNCTION public.obter_saldo_conta(
+    p_id_usuario bigint)
+RETURNS TABLE(saldo_conta numeric, nr_conta character varying, nr_agencia character varying, nome_cliente character varying) 
+LANGUAGE 'plpgsql'
+COST 100
+VOLATILE PARALLEL UNSAFE
+ROWS 1000
+
+AS $BODY$
 DECLARE
     v_saldo_conta numeric(38,2);
 BEGIN
     -- Obter saldo da conta
-    SELECT c.vl_saldo_conta, c.nr_conta, c.nr_agencia
-    INTO v_saldo_conta, nr_conta, nr_agencia
+    SELECT c.vl_saldo_conta, c.nr_conta, c.nr_agencia, cl.nm_cliente
+    INTO v_saldo_conta, nr_conta, nr_agencia, nome_cliente
     FROM tb_conta c
+    JOIN tb_cliente cl ON c.fk_nr_id_cliente = cl.nr_id_cliente
     WHERE c.fk_nr_id_cliente = p_id_usuario;
 
     -- Verificar transações do tipo 1 dentro de um minuto
@@ -57,34 +79,24 @@ BEGIN
             AND t.dt_transacao::timestamp >= (CURRENT_TIMESTAMP - interval '1 minute')::timestamp;
     END IF;
 
-    RETURN QUERY SELECT v_saldo_conta, nr_conta, nr_agencia;
+    RETURN QUERY SELECT v_saldo_conta, nr_conta, nr_agencia, nome_cliente;
 
 END;
 $BODY$;
 
+
 ALTER FUNCTION public.obter_saldo_conta(bigint)
     OWNER TO postgres;
 
--- FUNCTION: public.obter_lista_transacoes(bigint)
-
--- DROP FUNCTION IF EXISTS public.obter_lista_transacoes(bigint);
-
--- FUNCTION: public.obter_transacoes_cliente(bigint)
-
--- DROP FUNCTION IF EXISTS public.obter_transacoes_cliente(bigint);
 
 CREATE OR REPLACE FUNCTION public.obter_transacoes_cliente(
-    p_id_cliente bigint)
-RETURNS TABLE(
-    entrada_saida character varying,
-    origem_destino character varying,
-    valor numeric,
-    tipo character varying,
-    data_transferencia text)
-LANGUAGE 'plpgsql'
-COST 100
-VOLATILE PARALLEL UNSAFE
-ROWS 1000
+	p_id_cliente bigint)
+    RETURNS TABLE(entrada_saida character varying, origem_destino character varying, valor numeric, tipo character varying, data_transferencia text) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
+
 AS $BODY$
 BEGIN
     RETURN QUERY
@@ -104,6 +116,7 @@ BEGIN
             CASE
                 WHEN t.tp_transacao = 0 THEN 'PIX'::character varying
                 WHEN t.tp_transacao = 1 THEN 'TED'::character varying
+				WHEN t.tp_transacao = 2 THEN 'TAXA'::character varying
             END AS tipo,
             TO_CHAR(t.dt_transacao::timestamp, 'YYYY-MM-DD HH24:MI:SS') AS data_transferencia
         FROM
@@ -126,36 +139,23 @@ BEGIN
 END;
 $BODY$;
 
-
 ALTER FUNCTION public.obter_transacoes_cliente(bigint)
     OWNER TO postgres;
 
-
--- FUNCTION: public.realizar_transferencia(bigint, bigint, numeric, integer)
-
--- DROP FUNCTION IF EXISTS public.realizar_transferencia(bigint, bigint, numeric, integer);
-
--- FUNCTION: public.realizar_transferencia(bigint, bigint, numeric, integer)
-
--- DROP FUNCTION IF EXISTS public.realizar_transferencia(bigint, bigint, numeric, integer);
 CREATE OR REPLACE FUNCTION public.realizar_transferencia(
-    p_id_conta_origem bigint,
-    p_id_conta_destino bigint,
-    p_valor_transferencia numeric,
-    p_tipo_transacao integer)
-RETURNS TABLE(
-    nome_cliente_origem character varying,
-    nome_cliente_destino character varying,
-    dt_transacao timestamp,
-    tipo_transacao integer,
-    valor_transferencia numeric,
-    id_transacao bigint)
-LANGUAGE 'plpgsql'
-COST 100
-VOLATILE PARALLEL UNSAFE
-ROWS 1000
+	p_id_conta_origem bigint,
+	p_id_conta_destino bigint,
+	p_valor_transferencia numeric,
+	p_tipo_transacao integer)
+    RETURNS TABLE(nome_cliente_origem character varying, nome_cliente_destino character varying, dt_transacao timestamp without time zone, tipo_transacao integer, valor_transferencia numeric, id_transacao bigint) 
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+    ROWS 1000
 
 AS $BODY$
+DECLARE
+    v_saldo_conta_origem numeric(38,2);
 BEGIN
     -- Obter nomes dos clientes de origem e destino
     SELECT
@@ -177,7 +177,8 @@ BEGIN
     -- Debitar o valor da conta de origem
     UPDATE tb_conta
     SET vl_saldo_conta = vl_saldo_conta - p_valor_transferencia
-    WHERE nr_id_conta = p_id_conta_origem;
+    WHERE nr_id_conta = p_id_conta_origem
+    RETURNING vl_saldo_conta INTO v_saldo_conta_origem;
 
     -- Somar o valor na conta de destino
     UPDATE tb_conta
@@ -189,18 +190,25 @@ BEGIN
     VALUES (p_tipo_transacao, p_valor_transferencia, p_id_conta_origem, p_id_conta_destino, CURRENT_TIMESTAMP)
     RETURNING nr_id_transacao, CURRENT_TIMESTAMP, p_tipo_transacao, p_valor_transferencia INTO id_transacao, dt_transacao, tipo_transacao, valor_transferencia;
 
+    -- Se a transação for do tipo 1, realizar outra transação debitando 12.60 da conta de origem
+    IF p_tipo_transacao = 1 THEN
+        UPDATE tb_conta
+        SET vl_saldo_conta = vl_saldo_conta - 12.60
+        WHERE nr_id_conta = p_id_conta_origem;
+        
+        -- Inserir a transação do tipo 2 na tabela tb_transacoes
+        INSERT INTO tb_transacoes(tp_transacao, vl_transacao, fk_nr_id_conta_origem, fk_nr_id_conta_destino, dt_transacao)
+        VALUES (2, 12.60, p_id_conta_origem, NULL, CURRENT_TIMESTAMP);
+    END IF;
+
     -- Retornar os resultados
     RETURN QUERY SELECT nome_cliente_origem, nome_cliente_destino, dt_transacao, tipo_transacao, valor_transferencia, id_transacao;
 
 END;
 $BODY$;
 
-
 ALTER FUNCTION public.realizar_transferencia(bigint, bigint, numeric, integer)
     OWNER TO postgres;
--- FUNCTION: public.registrar_chave_pix(bigint, integer)
-
--- DROP FUNCTION IF EXISTS public.registrar_chave_pix(bigint, integer);
 
 CREATE OR REPLACE FUNCTION public.registrar_chave_pix(
 	p_cliente_id bigint,
@@ -254,38 +262,18 @@ $BODY$;
 ALTER FUNCTION public.registrar_chave_pix(bigint, integer)
     OWNER TO postgres;
 
---
--- TOC entry 224 (class 1255 OID 117959)
--- Name: obter_dados_autenticacao(character varying); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.obter_dados_autenticacao(p_identificador character varying) RETURNS TABLE(cliente_id bigint, cpf character varying, senha character varying)
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        nr_id_cliente,
-        nr_cpf,
-        ds_senha
-    FROM
-        tb_cliente
-    WHERE
-        p_identificador IN (nr_cpf, ds_email, nr_telefone);
-END;
-$$;
-
-
-ALTER FUNCTION public.obter_dados_autenticacao(p_identificador character varying) OWNER TO postgres;
-
---
--- TOC entry 222 (class 1255 OID 117956)
--- Name: salvar_cliente(character varying, character varying, character varying, character varying, character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.salvar_cliente(p_ds_email character varying, p_ds_senha character varying, p_dt_nascimento character varying, p_nm_cliente character varying, p_nr_cpf character varying, p_nr_telefone character varying) RETURNS bigint
-    LANGUAGE plpgsql
-    AS $$
+CREATE OR REPLACE FUNCTION public.salvar_cliente(
+	p_ds_email character varying,
+	p_ds_senha character varying,
+	p_dt_nascimento character varying,
+	p_nm_cliente character varying,
+	p_nr_cpf character varying,
+	p_nr_telefone character varying)
+    RETURNS bigint
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
 DECLARE
     v_cliente_id BIGINT;
 BEGIN
@@ -305,19 +293,20 @@ BEGIN
     -- Retornar o ID do cliente inserido
     RETURN v_cliente_id;
 END;
-$$;
+$BODY$;
 
+ALTER FUNCTION public.salvar_cliente(character varying, character varying, character varying, character varying, character varying, character varying)
+    OWNER TO postgres;
 
-ALTER FUNCTION public.salvar_cliente(p_ds_email character varying, p_ds_senha character varying, p_dt_nascimento character varying, p_nm_cliente character varying, p_nr_cpf character varying, p_nr_telefone character varying) OWNER TO postgres;
-
---
--- TOC entry 223 (class 1255 OID 117958)
--- Name: salvar_conta(bigint, character varying, character varying); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.salvar_conta(p_nr_id_cliente bigint, p_nr_conta character varying, p_nr_agencia character varying) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
+CREATE OR REPLACE FUNCTION public.salvar_conta(
+	p_nr_id_cliente bigint,
+	p_nr_conta character varying,
+	p_nr_agencia character varying)
+    RETURNS void
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
 BEGIN
     -- Inserir uma nova conta com saldo inicial de 100
     INSERT INTO tb_conta (
@@ -327,10 +316,10 @@ BEGIN
         p_nr_id_cliente, p_nr_conta, p_nr_agencia, 100.0
     );
 END;
-$$;
+$BODY$;
 
-
-ALTER FUNCTION public.salvar_conta(p_nr_id_cliente bigint, p_nr_conta character varying, p_nr_agencia character varying) OWNER TO postgres;
+ALTER FUNCTION public.salvar_conta(bigint, character varying, character varying)
+    OWNER TO postgres;
 
 SET default_tablespace = '';
 

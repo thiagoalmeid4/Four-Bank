@@ -2,7 +2,8 @@ package br.com.fourbank.api.enums;
 
 public enum TypeTransaction {
     PIX(0, "PIX"),
-    TED(1, "TED"),;
+    TED(1, "TED"),
+    TAXA(2, "TAXA");
 
     private int type;
     private String description;

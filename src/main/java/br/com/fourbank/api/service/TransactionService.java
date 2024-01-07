@@ -56,6 +56,11 @@ public class TransactionService {
         result.stream().forEach(transaction -> {
             transaction.setDateTransaction(DateFormatter.formatarData(transaction.getDateTransaction()));
         });
+        result.stream().forEach(transaction -> {
+            if(transaction.getOriginDestiny() == null && transaction.getTypeTransaction().equals("TAXA")){
+                transaction.setOriginDestiny("SERVIÇO DE TRANSFERÊNCIA - TED");
+            }
+        });
         return result;
     }
 
