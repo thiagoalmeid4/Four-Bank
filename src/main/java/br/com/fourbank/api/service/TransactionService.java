@@ -24,7 +24,7 @@ public class TransactionService {
     }
 
     public TransactionDtoResponse transaction(TransactionPixDtoRequest transactionPixDtoRequest, Long idCustomer) {
-
+        checkValue(transactionPixDtoRequest.getValue());
         var accountDestiny = accountDao.accountByPixKey(transactionPixDtoRequest.getPixKey());
         if (accountDestiny == null) {
             throw new FourBankException("Chave não encontrada", HttpStatus.NOT_FOUND.value());
@@ -38,7 +38,7 @@ public class TransactionService {
     }
 
     public TransactionDtoResponse transactionTed(TransactionTedDtoRequest ted, Long idCustomer){
-
+        checkValue(ted.getValue());
         var accountDestiny = accountDao.accountByAgencyNumber(ted.getAgency(), ted.getAccountNumber());
         if(accountDestiny == null){
             throw new FourBankException("Conta não encontrada",HttpStatus.NOT_FOUND.value());
@@ -69,6 +69,12 @@ public class TransactionService {
 
         if (account.getValue().compareTo(value) < 0) {
             throw new FourBankException("Saldo insuficiente", HttpStatus.FORBIDDEN.value());
+        }
+    }
+
+    private void checkValue(BigDecimal value) {
+        if (value.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new FourBankException("Valor inválido", HttpStatus.BAD_REQUEST.value());
         }
     }
 }
