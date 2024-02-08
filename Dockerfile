@@ -1,5 +1,5 @@
 # Use a imagem base do OpenJDK 17
-FROM adoptopenjdk:17-jre-hotspot
+FROM openjdk:17
 
 # Defina o diretório de trabalho como /app
 WORKDIR /app
