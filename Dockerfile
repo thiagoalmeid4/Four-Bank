@@ -5,7 +5,7 @@ FROM openjdk:17
 WORKDIR /app
 
 # Copie o arquivo JAR da sua aplicação para o contêiner
-COPY target/api-0.0.1-SNAPSHOT.jar app.jar
+COPY dist/api-0.0.1-SNAPSHOT.jar app.jar
 
 # Exponha a porta em que a aplicação está sendo executada
 EXPOSE 8080
