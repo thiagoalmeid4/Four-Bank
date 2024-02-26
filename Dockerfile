@@ -11,8 +11,7 @@ COPY src src
 # Compile o projeto e gere o arquivo JAR
 RUN ./mvnw package -DskipTests
 
-# Use a imagem JRE mínima para executar a aplicação
-FROM openjdk:17-jre-slim
+FROM openjdk:17
 
 # Defina o diretório de trabalho como /app
 WORKDIR /app
