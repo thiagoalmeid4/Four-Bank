@@ -5,12 +5,12 @@ FROM openjdk:17 as builder
 WORKDIR /app
 
 # Copie os arquivos de configuração do projeto Maven
-COPY pom.xml .
-COPY src src
+COPY . .
 
 # Compile o projeto e gere o arquivo JAR
 RUN ./mvnw package -DskipTests
 
+# Use a imagem JRE mínima para executar a aplicação
 FROM openjdk:17
 
 # Defina o diretório de trabalho como /app
