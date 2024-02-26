@@ -7,6 +7,8 @@ WORKDIR /app
 # Copie os arquivos de configuração do projeto Maven
 COPY . .
 
+RUN chmod +x mvnw
+
 # Compile o projeto e gere o arquivo JAR
 RUN ./mvnw package -DskipTests
 
