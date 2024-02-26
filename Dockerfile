@@ -1,11 +1,25 @@
-# Use a imagem base do OpenJDK 17
+# Use a imagem base do OpenJDK 17 para compilar o projeto
+FROM openjdk:17 as builder
+
+# Defina o diretório de trabalho como /app
+WORKDIR /app
+
+# Copie os arquivos de configuração do projeto Maven
+COPY . .
+
+RUN chmod +x mvnw
+
+# Compile o projeto e gere o arquivo JAR
+RUN ./mvnw package -DskipTests
+
+# Use a imagem JRE mínima para executar a aplicação
 FROM openjdk:17
 
 # Defina o diretório de trabalho como /app
 WORKDIR /app
 
-# Copie o arquivo JAR da sua aplicação para o contêiner
-COPY dist/api-0.0.1-SNAPSHOT.jar app.jar
+# Copie o arquivo JAR gerado durante a fase de compilação
+COPY --from=builder /app/target/api-0.0.1-SNAPSHOT.jar app.jar
 
 # Exponha a porta em que a aplicação está sendo executada
 EXPOSE 8080
