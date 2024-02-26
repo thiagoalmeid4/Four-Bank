@@ -1,6 +1,4 @@
 package br.com.fourbank.api.service;
-
-import br.com.fourbank.api.config.utils.DateFormatter;
 import br.com.fourbank.api.dao.account.AccountDao;
 import br.com.fourbank.api.dto.transaction.request.TransactionPixDtoRequest;
 import br.com.fourbank.api.dto.transaction.request.TransactionTedDtoRequest;
@@ -53,9 +51,6 @@ public class TransactionService {
 
     public List<TransactionHistoryDtoResponse> transactionHistory(Long idCustomer) {
         var result = accountDao.transactionHistory(idCustomer);
-        result.stream().forEach(transaction -> {
-            transaction.setDateTransaction(DateFormatter.formatarData(transaction.getDateTransaction()));
-        });
         result.stream().forEach(transaction -> {
             if(transaction.getOriginDestiny() == null && transaction.getTypeTransaction().equals("TAXA")){
                 transaction.setOriginDestiny("SERVIÇO DE TRANSFERÊNCIA - TED");
